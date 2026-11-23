@@ -1,0 +1,6 @@
+{
+  "name": "Christmas Night 2026",
+  "description": "Official ticketing and celebration platform for Christmas Night 2026 — featuring live Razorpay checkout, instant PDF and QR ticket delivery, and organizer gate verification.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

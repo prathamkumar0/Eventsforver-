@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "EventConfig": {
+      "title": "EventConfig",
+      "description": "Central event configuration, countdown target, venue, pricing rules, and editable details for Christmas Night 2026.",
+      "type": "object",
+      "properties": {
+        "eventName": { "type": "string", "maxLength": 120, "description": "Display name of the event" },
+        "tagline": { "type": "string", "maxLength": 200, "description": "Hero subheading" },
+        "description": { "type": "string", "maxLength": 2000, "description": "Event overview description" },
+        "eventDate": { "type": "string", "maxLength": 80, "description": "Editable event date placeholder or value" },
+        "eventTime": { "type": "string", "maxLength": 80, "description": "Editable event time placeholder or value" },
+        "countdownIso": { "type": "string", "maxLength": 64, "description": "ISO 8601 target timestamp for countdown" },
+        "timezone": { "type": "string", "maxLength": 64, "description": "IANA timezone e.g. Asia/Kolkata" },
+        "venueName": { "type": "string", "maxLength": 160, "description": "Editable venue name" },
+        "venueAddress": { "type": "string", "maxLength": 300, "description": "Editable venue street address" },
+        "city": { "type": "string", "maxLength": 80, "description": "Editable city" },
+        "country": { "type": "string", "maxLength": 80, "description": "Editable country" },
+        "googleMapsUrl": { "type": "string", "maxLength": 500, "description": "Google Maps directions URL" },
+        "contactNumber": { "type": "string", "maxLength": 40, "description": "Organizer contact phone" },
+        "contactEmail": { "type": "string", "maxLength": 160, "description": "Organizer contact email" },
+        "instagramUrl": { "type": "string", "maxLength": 300, "description": "Organizer Instagram link" },
+        "logoUrl": { "type": "string", "maxLength": 300, "description": "Optional event logo URL" },
+        "taxPercent": { "type": "number", "description": "Tax percentage applied to subtotal" },
+        "platformFeeInr": { "type": "number", "description": "Flat booking fee in INR per ticket or order" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp" }
+      },
+      "required": [
+        "eventName",
+        "tagline",
+        "description",
+        "eventDate",
+        "eventTime",
+        "countdownIso",
+        "timezone",
+        "venueName",
+        "venueAddress",
+        "city",
+        "country",
+        "contactNumber",
+        "contactEmail",
+        "taxPercent",
+        "platformFeeInr",
+        "updatedAt"
+      ]
+    },
+    "TicketCategory": {
+      "title": "TicketCategory",
+      "description": "Ticket pass tier configuration with inventory tracking and benefits.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 80, "description": "Pass category name" },
+        "description": { "type": "string", "maxLength": 400, "description": "Short category summary" },
+        "priceInr": { "type": "number", "description": "Unit price in INR" },
+        "totalInventory": { "type": "number", "description": "Total configured capacity" },
+        "soldCount": { "type": "number", "description": "Confirmed paid tickets sold" },
+        "reservedCount": { "type": "number", "description": "Currently held inventory during pending checkout" },
+        "benefits": { "type": "array", "description": "List of pass inclusions (max 10)" },
+        "enabled": { "type": "boolean", "description": "Whether category is active for purchase" },
+        "sortOrder": { "type": "number", "description": "Display ordering index" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last modified timestamp" }
+      },
+      "required": [
+        "name",
+        "description",
+        "priceInr",
+        "totalInventory",
+        "soldCount",
+        "reservedCount",
+        "benefits",
+        "enabled",
+        "sortOrder",
+        "updatedAt"
+      ]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Private customer booking record with Razorpay order/payment metadata and delivery status.",
+      "type": "object",
+      "properties": {
+        "bookingCode": { "type": "string", "maxLength": 40, "pattern": "^[A-Z0-9\\-]+$", "description": "Unique human-readable booking ID" },
+        "customerName": { "type": "string", "maxLength": 120, "description": "Customer full name" },
+        "customerEmail": { "type": "string", "maxLength": 160, "description": "Customer email address" },
+        "customerPhone": { "type": "string", "maxLength": 30, "description": "Customer mobile number" },
+        "subtotalInr": { "type": "number", "description": "Server-calculated subtotal in INR" },
+        "taxInr": { "type": "number", "description": "Server-calculated tax in INR" },
+        "platformFeeInr": { "type": "number", "description": "Server-calculated platform fee in INR" },
+        "totalInr": { "type": "number", "description": "Final server-calculated payable INR amount" },
+        "paymentStatus": { "type": "string", "enum": ["PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED"], "description": "Verified payment status" },
+        "razorpayOrderId": { "type": "string", "maxLength": 80, "description": "Razorpay Order ID" },
+        "razorpayPaymentId": { "type": "string", "maxLength": 80, "description": "Razorpay Payment ID" },
+        "emailStatus": { "type": "string", "enum": ["NOT_SENT", "SENT", "FAILED", "PENDING_CONFIG"], "description": "Ticket email delivery state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": [
+        "bookingCode",
+        "customerName",
+        "customerEmail",
+        "customerPhone",
+        "subtotalInr",
+        "taxInr",
+        "platformFeeInr",
+        "totalInr",
+        "paymentStatus",
+        "emailStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "Individual issued event pass with unique QR validation code and check-in state.",
+      "type": "object",
+      "properties": {
+        "ticketCode": { "type": "string", "maxLength": 40, "pattern": "^[A-Z0-9\\-]+$", "description": "Unique Ticket ID" },
+        "bookingId": { "type": "string", "maxLength": 80, "pattern": "^[a-zA-Z0-9_\\-]+$", "description": "Parent Booking document ID" },
+        "categoryId": { "type": "string", "maxLength": 80, "pattern": "^[a-zA-Z0-9_\\-]+$", "description": "Ticket category ID" },
+        "categoryName": { "type": "string", "maxLength": 80, "description": "Snapshot of category name" },
+        "customerName": { "type": "string", "maxLength": 120, "description": "Attendee name on pass" },
+        "qrToken": { "type": "string", "maxLength": 128, "description": "Cryptographic verification identifier (no PII)" },
+        "status": { "type": "string", "enum": ["VALID", "USED", "CANCELLED", "REFUNDED"], "description": "Gate check-in status" },
+        "checkedInAt": { "type": "string", "format": "date-time", "description": "Timestamp when checked in" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Ticket issuance timestamp" }
+      },
+      "required": [
+        "ticketCode",
+        "bookingId",
+        "categoryId",
+        "categoryName",
+        "customerName",
+        "qrToken",
+        "status",
+        "createdAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized event organizer administrator record.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 160, "description": "Verified organizer email" },
+        "role": { "type": "string", "enum": ["ADMIN"], "description": "Administrator role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Provisioned timestamp" }
+      },
+      "required": ["email", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/eventConfig/{configId}": {
+      "schema": { "$ref": "#/entities/EventConfig" },
+      "description": "Publicly readable event settings; admin-only updates."
+    },
+    "/ticketCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/TicketCategory" },
+      "description": "Publicly readable active pass categories; admin-only management."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "PII-isolated customer bookings; admin and server-side access only."
+    },
+    "/tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/Ticket" },
+      "description": "Issued event tickets; admin and server-side validation only."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Organizer admin allowlist."
+    }
+  }
+}

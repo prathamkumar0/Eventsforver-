@@ -1,0 +1,197 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && request.auth.token.email == 'prathamkumar1703@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidEventConfig(data) {
+      return data.keys().hasAll([
+        'eventName', 'tagline', 'description', 'eventDate', 'eventTime',
+        'countdownIso', 'timezone', 'venueName', 'venueAddress', 'city',
+        'country', 'contactNumber', 'contactEmail', 'taxPercent',
+        'platformFeeInr', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'eventName', 'tagline', 'description', 'eventDate', 'eventTime',
+        'countdownIso', 'timezone', 'venueName', 'venueAddress', 'city',
+        'country', 'googleMapsUrl', 'contactNumber', 'contactEmail',
+        'instagramUrl', 'logoUrl', 'taxPercent', 'platformFeeInr', 'updatedAt'
+      ]) &&
+      data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 120 &&
+      data.tagline is string && data.tagline.size() >= 1 && data.tagline.size() <= 200 &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 2000 &&
+      data.eventDate is string && data.eventDate.size() >= 1 && data.eventDate.size() <= 80 &&
+      data.eventTime is string && data.eventTime.size() >= 1 && data.eventTime.size() <= 80 &&
+      data.countdownIso is string && data.countdownIso.size() >= 1 && data.countdownIso.size() <= 64 &&
+      data.timezone is string && data.timezone.size() >= 1 && data.timezone.size() <= 64 &&
+      data.venueName is string && data.venueName.size() >= 1 && data.venueName.size() <= 160 &&
+      data.venueAddress is string && data.venueAddress.size() >= 1 && data.venueAddress.size() <= 300 &&
+      data.city is string && data.city.size() >= 1 && data.city.size() <= 80 &&
+      data.country is string && data.country.size() >= 1 && data.country.size() <= 80 &&
+      data.contactNumber is string && data.contactNumber.size() >= 1 && data.contactNumber.size() <= 40 &&
+      data.contactEmail is string && data.contactEmail.size() >= 1 && data.contactEmail.size() <= 160 &&
+      (!('googleMapsUrl' in data) || (data.googleMapsUrl is string && data.googleMapsUrl.size() <= 500)) &&
+      (!('instagramUrl' in data) || (data.instagramUrl is string && data.instagramUrl.size() <= 300)) &&
+      (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 300)) &&
+      data.taxPercent is number && data.taxPercent >= 0 && data.taxPercent <= 50 &&
+      data.platformFeeInr is number && data.platformFeeInr >= 0 && data.platformFeeInr <= 5000 &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidTicketCategory(data) {
+      return data.keys().hasAll([
+        'name', 'description', 'priceInr', 'totalInventory', 'soldCount',
+        'reservedCount', 'benefits', 'enabled', 'sortOrder', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name', 'description', 'priceInr', 'totalInventory', 'soldCount',
+        'reservedCount', 'benefits', 'enabled', 'sortOrder', 'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 400 &&
+      data.priceInr is number && data.priceInr >= 0 && data.priceInr <= 500000 &&
+      data.totalInventory is number && data.totalInventory >= 0 && data.totalInventory <= 100000 &&
+      data.soldCount is number && data.soldCount >= 0 && data.soldCount <= data.totalInventory &&
+      data.reservedCount is number && data.reservedCount >= 0 && data.reservedCount <= data.totalInventory &&
+      data.benefits is list && data.benefits.size() <= 10 &&
+      (data.benefits.size() == 0 || (data.benefits[0] is string && data.benefits[0].size() <= 140)) &&
+      data.enabled is bool &&
+      data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 1000 &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll([
+        'bookingCode', 'customerName', 'customerEmail', 'customerPhone',
+        'subtotalInr', 'taxInr', 'platformFeeInr', 'totalInr',
+        'paymentStatus', 'emailStatus', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'bookingCode', 'customerName', 'customerEmail', 'customerPhone',
+        'subtotalInr', 'taxInr', 'platformFeeInr', 'totalInr',
+        'paymentStatus', 'razorpayOrderId', 'razorpayPaymentId',
+        'emailStatus', 'createdAt', 'updatedAt'
+      ]) &&
+      data.bookingCode is string && data.bookingCode.size() >= 4 && data.bookingCode.size() <= 40 &&
+      data.bookingCode.matches('^[A-Z0-9\\-]+$') &&
+      data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+      data.customerEmail is string && data.customerEmail.size() >= 3 && data.customerEmail.size() <= 160 &&
+      data.customerPhone is string && data.customerPhone.size() >= 6 && data.customerPhone.size() <= 30 &&
+      data.subtotalInr is number && data.subtotalInr >= 0 &&
+      data.taxInr is number && data.taxInr >= 0 &&
+      data.platformFeeInr is number && data.platformFeeInr >= 0 &&
+      data.totalInr is number && data.totalInr >= 0 &&
+      data.paymentStatus in ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'] &&
+      data.emailStatus in ['NOT_SENT', 'SENT', 'FAILED', 'PENDING_CONFIG'] &&
+      (!('razorpayOrderId' in data) || (data.razorpayOrderId is string && data.razorpayOrderId.size() <= 80)) &&
+      (!('razorpayPaymentId' in data) || (data.razorpayPaymentId is string && data.razorpayPaymentId.size() <= 80)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidTicket(data) {
+      return data.keys().hasAll([
+        'ticketCode', 'bookingId', 'categoryId', 'categoryName',
+        'customerName', 'qrToken', 'status', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ticketCode', 'bookingId', 'categoryId', 'categoryName',
+        'customerName', 'qrToken', 'status', 'checkedInAt', 'createdAt'
+      ]) &&
+      data.ticketCode is string && data.ticketCode.size() >= 4 && data.ticketCode.size() <= 40 &&
+      data.ticketCode.matches('^[A-Z0-9\\-]+$') &&
+      isValidId(data.bookingId) &&
+      isValidId(data.categoryId) &&
+      data.categoryName is string && data.categoryName.size() >= 1 && data.categoryName.size() <= 80 &&
+      data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+      data.qrToken is string && data.qrToken.size() >= 16 && data.qrToken.size() <= 128 &&
+      data.status in ['VALID', 'USED', 'CANCELLED', 'REFUNDED'] &&
+      (!('checkedInAt' in data) || data.checkedInAt is timestamp) &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+      data.keys().hasOnly(['email', 'role', 'createdAt']) &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+      data.role == 'ADMIN' &&
+      data.createdAt is timestamp;
+    }
+
+    // Connection test document for startup verification
+    match /test/{docId} {
+      allow get: if docId == 'connection';
+    }
+
+    // Publicly readable main event configuration; admin-only writes
+    match /eventConfig/{configId} {
+      allow get: if isValidId(configId) && configId == 'main';
+      allow create: if isValidId(configId) && isAdmin() && isValidEventConfig(incoming()) && incoming().updatedAt == request.time;
+      allow update: if isValidId(configId) && isAdmin() && isValidEventConfig(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isValidId(configId) && isAdmin();
+    }
+
+    // Publicly readable enabled ticket categories; admin-only full management
+    match /ticketCategories/{categoryId} {
+      allow get: if isValidId(categoryId) && (existing().enabled == true || isAdmin());
+      allow list: if resource.data.enabled == true || isAdmin();
+      allow create: if isValidId(categoryId) && isAdmin() && isValidTicketCategory(incoming()) && incoming().updatedAt == request.time;
+      allow update: if isValidId(categoryId) && isAdmin() && isValidTicketCategory(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isValidId(categoryId) && isAdmin();
+    }
+
+    // PII-isolated bookings: Admin-only via client SDK
+    match /bookings/{bookingId} {
+      allow get: if isValidId(bookingId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(bookingId) && isAdmin() && isValidBooking(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(bookingId) && isAdmin() && isValidBooking(incoming()) && incoming().createdAt == existing().createdAt && incoming().bookingCode == existing().bookingCode && incoming().totalInr == existing().totalInr && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['paymentStatus', 'razorpayPaymentId', 'emailStatus', 'updatedAt']);
+      allow delete: if isValidId(bookingId) && isAdmin();
+    }
+
+    // Issued tickets: Admin-only via client SDK
+    match /tickets/{ticketId} {
+      allow get: if isValidId(ticketId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(ticketId) && isAdmin() && isValidTicket(incoming()) && incoming().createdAt == request.time && exists(/databases/$(database)/documents/bookings/$(incoming().bookingId));
+      allow update: if isValidId(ticketId) && isAdmin() && isValidTicket(incoming()) && incoming().createdAt == existing().createdAt && incoming().bookingId == existing().bookingId && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'checkedInAt']);
+      allow delete: if isValidId(ticketId) && isAdmin();
+    }
+
+    // Organizer admin allowlist
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isAdmin() || (isSignedIn() && request.auth.uid == uid));
+      allow create, update: if isValidId(uid) && isAdmin() && isValidAdminUser(incoming()) && incoming().createdAt == request.time;
+      allow delete: if isValidId(uid) && isAdmin();
+    }
+  }
+}
